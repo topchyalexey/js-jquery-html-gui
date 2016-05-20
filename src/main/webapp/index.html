@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Рассчет резисторов</title>
+  <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="http://code.jquery.com/jquery-1.10.2.js"></script>
+  <script src="http://code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+	<!--  link rel="stylesheet" href="//jqueryui.com/jquery-wp-content/themes/jqueryui.com/style.css" -->
+	
+	<style>
+	table {
+	    border-collapse: collapse;
+	    width: 100%;
+	}
+	
+	th, td {
+	    text-align: left;
+	    padding: 8px;
+	}
+	
+	tr:nth-child(even){background-color: #f2f2f2}
+	
+	th {
+	    background-color: #4CAF50;
+	    color: white;
+	}
+	
+	.column-left{ float: left; width: 35%; margin: 5pt }
+	.column-right{ float: right; width: 30%; margin: 5pt }
+	.column-center{ display: inline-block; width: 30%; margin: 5pt }
+	
+	</style>
+  <script>
+  
+  $(function() {
+
+	// доступные номиналы  	
+	var data = $( "div.data > val" ).map(function() {
+										return this.innerHTML;
+									}).get();
+
+	// формулы
+	function seq(v1,v2) {
+		return v1 + v2;
+	}
+	
+	function parallel(v1,v2) {
+		return (v1*v2)/(v1 + v2);
+	}
+
+	function seq_parallel(v1,v2,v3) {
+		return seq(v1, parallel(v2,v3));
+	}
+
+	function diffPerc( val, target) {
+		var onePerc = target/100;
+		var diff = target - val;
+		return Math.round((diff/onePerc) * 100) / 100;
+	}
+	
+	// рассчет
+	function calc() {
+    	var src = parseFloat($('#source').spinner( "value" ));
+    	var divergency = parseFloat($('#divergency').spinner( "value" ));
+    		
+        var min = src - divergency;
+        var max = src + divergency;
+        
+        $("#seq").find("tr:gt(0)").remove();
+        $("#par").find("tr:gt(0)").remove();
+        $("#sp").find("tr:gt(0)").remove();
+		
+        // 3 раза прозродим по массиву
+		$.each(data, function( index1, v1 ) {
+			
+			$.each(data, function( index2, v2 ) {
+	    	
+				
+				var seqVal = seq(parseFloat(v1),parseFloat(v2));
+				
+	    		
+	    		if( seqVal >= min && seqVal <= max ) {
+	    			$("#seq").find('tbody').append($('<tr>')
+	    			        .append($('<td>').text(v1))
+	    			        .append($('<td>').text(v2))
+	    			        .append($('<td>').text(diffPerc(seqVal,src) + "%" ))
+	    			        );	    			
+	    		}
+	    		
+	    		var paraVal = parallel(parseFloat(v1),parseFloat(v2));	    		
+	    		
+	    		if(paraVal >= min && paraVal <= max) {
+	    			$("#par").find('tbody').append($('<tr>')
+	    			        .append($('<td>').text(v1))
+	    			        .append($('<td>').text(v2))
+	    			        .append($('<td>').text(diffPerc(paraVal,src) + "%" ))
+	    			        );
+	    		} 				
+				
+				$.each(data, function( index3, v3 ) {
+					
+					var psVal = seq_parallel(parseFloat(v1),parseFloat(v2), parseFloat(v3));	
+					
+					if(psVal >= min && psVal <= max) {
+						$("#sp").find('tbody').append($('<tr>')
+		    			        .append($('<td>').text(v1))
+		    			        .append($('<td>').text(v2))
+		    			        .append($('<td>').text(v3))
+		    			        .append($('<td>').text(diffPerc(psVal,src) + "%" ))
+		    			        );
+					}
+				})
+			})
+		});
+		
+
+	}
+		
+	$( "#source" ).spinner({
+	      step: 0.01,
+	      numberFormat: "n"
+	    });
+	
+	$( "#divergency" ).spinner({
+	      step: 0.01,
+	      numberFormat: "n"
+	    });
+	
+    $( "button" ).button().click(function( event ) {
+		calc();
+    	event.preventDefault();
+    });
+  });
+  </script>
+</head>
+<body>
+ 
+ 	<div class="data" style="visibility: hidden">
+		<val>1.0</val>
+		<val>1.1</val>
+		<val>1.2</val>
+		<val>1.3</val>
+		<val>1.5</val>
+		<val>1.6</val>
+		<val>1.8</val>
+		<val>2.0</val>
+		<val>2.2</val>
+		<val>2.4</val>
+		<val>2.7</val>
+		<val>3.0</val>
+		<val>3.3</val>
+		<val>3.6</val>
+		<val>3.9</val>
+		<val>4.3</val>
+		<val>4.7</val>
+		<val>5.1</val>
+		<val>5.6</val>
+		<val>6.2</val>
+		<val>6.8</val>
+		<val>7.5</val>
+		<val>8.2</val>
+		<val>9.1</val>
+ 	</div>
+
+
+
+	<form>
+		<label for="source">Искомый номинал: </label><input id="source"
+			value="3.6"> <label for="divergency">Допустимое
+			отклонение: </label><input id="divergency" value="0.3">
+		<button>Рассчет</button>
+
+		<p/>	  	
+	  	
+	<div class="container">
+   		<div class="column-left">
+			<table id="seq">
+				<tbody>
+					<tr>
+						<th colspan="3">Последовательно</th>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="column-center">
+			<table id="par">
+				<tbody>
+					<tr>
+						<th colspan="3">Параллельно</th>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div class="column-right">
+			<table id="sp">
+				<tbody>
+					<tr>
+						<th colspan="4">Последовательно+Параллельно</th>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		</div>
+
+
+	</form>
+
+</body>
+</html>

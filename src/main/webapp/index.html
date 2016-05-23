@@ -35,6 +35,7 @@
   
   $(function() {
 
+	  
 	// доступные номиналы  	
 	var data = $( "div.data > val" ).map(function() {
 										return this.innerHTML;
@@ -58,6 +59,62 @@
 		var diff = target - val;
 		return Math.round((diff/onePerc) * 100) / 100;
 	}
+
+	// преобразование последовательности объектов в одну строку (однообразное представление ряда значений)
+	function key() {
+		var result = "";
+		for (var i = 0; i < arguments.length; i++) {
+			if ( arguments[i] === "" ) {
+				continue;
+			}
+			if ( result !== "") {
+				result += "/";
+			}
+		   	result += arguments[i];
+		}
+		return result; 
+	}
+	
+	// для поиска соответствия в 2-х колоночной таблице
+	function remove2colsDups(tab) {
+		var seen = {};
+		tab.find('tr').each(function() {
+		    
+		    var d1 = $(this).find('td').eq(0).text();
+		    var d2 = $(this).find('td').eq(1).text();  
+		    
+		    var key1 = key(d1,d2)
+		    var key2 = key(d2,d1)
+			
+		   	if ( seen[key1] || seen[key2] ) {
+		   		$(this).remove();
+		   	} else {
+		        seen[key1] = true;
+		    }
+		});
+	}
+	// для поиска соответствия в 3-х колоночной таблице
+	function remove3colsDups(tab) {
+		
+		var seen = {};
+		tab.find('tr').each(function() {
+		    
+		    var d1 = $(this).find('td').eq(0).text();
+		    var d2 = $(this).find('td').eq(1).text();  
+		    var d3 = $(this).find('td').eq(2).text();
+		    
+		    var key1 = key(d1,d2,d3)
+		    var key2 = key(d1,d3,d2)
+			
+		   	if ( seen[key1] || seen[key2] ) {
+		   		$(this).remove();
+		   	} else {
+		        seen[key1] = true;
+		    }
+		});
+	}
+	
+	
 	
 	// рассчет
 	function calc() {
@@ -70,39 +127,44 @@
         $("#seq").find("tr:gt(0)").remove();
         $("#par").find("tr:gt(0)").remove();
         $("#sp").find("tr:gt(0)").remove();
-		
-        // 3 раза прозродим по массиву
+
+        
+        // 3 раза проходим по массиву
 		$.each(data, function( index1, v1 ) {
 			
 			$.each(data, function( index2, v2 ) {
 	    	
 				
 				var seqVal = seq(parseFloat(v1),parseFloat(v2));
+    		
+    			if( seqVal >= min && seqVal <= max ) {
 				
-	    		
-	    		if( seqVal >= min && seqVal <= max ) {
-	    			$("#seq").find('tbody').append($('<tr>')
-	    			        .append($('<td>').text(v1))
-	    			        .append($('<td>').text(v2))
-	    			        .append($('<td>').text(diffPerc(seqVal,src) + "%" ))
-	    			        );	    			
-	    		}
-	    		
+    				$("#seq").find('tbody').append($('<tr>')
+    			        .append($('<td>').text(v1))
+    			        .append($('<td>').text(v2))
+    			        .append($('<td>').text(diffPerc(seqVal,src) + "%" ))
+    			        );	    			
+    			}
+    		
+		
 	    		var paraVal = parallel(parseFloat(v1),parseFloat(v2));	    		
 	    		
-	    		if(paraVal >= min && paraVal <= max) {
+	    		if( paraVal >= min && paraVal <= max) {
+    			
 	    			$("#par").find('tbody').append($('<tr>')
 	    			        .append($('<td>').text(v1))
 	    			        .append($('<td>').text(v2))
 	    			        .append($('<td>').text(diffPerc(paraVal,src) + "%" ))
 	    			        );
 	    		} 				
-				
+		    	
+								
 				$.each(data, function( index3, v3 ) {
-					
+						
 					var psVal = seq_parallel(parseFloat(v1),parseFloat(v2), parseFloat(v3));	
 					
-					if(psVal >= min && psVal <= max) {
+					if( psVal >= min && psVal <= max) {
+						
 						$("#sp").find('tbody').append($('<tr>')
 		    			        .append($('<td>').text(v1))
 		    			        .append($('<td>').text(v2))
@@ -110,11 +172,16 @@
 		    			        .append($('<td>').text(diffPerc(psVal,src) + "%" ))
 		    			        );
 					}
+
 				})
+				
 			})
 		});
 		
-
+        // удаление возможных дубликатов
+		remove2colsDups($("#seq"));
+		remove2colsDups($("#par"));
+		remove3colsDups($("#sp"));        
 	}
 		
 	$( "#source" ).spinner({
